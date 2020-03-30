@@ -40,7 +40,7 @@ namespace VSBlockJumper
         public override bool Default { get { return false; } }
         public override EditorOptionKey<bool> Key { get { return SkipClosestEdgeOption.OptionKey; } }
     }
-    
+
     [Export(typeof(IWpfTextViewCreationListener))]
     [ContentType("text")]
     [TextViewRole(PredefinedTextViewRoles.Interactive)]
@@ -106,6 +106,7 @@ namespace VSBlockJumper
 
         public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             if (pguidCmdGroup == IDs.PackageCommandSetGUID)
             {
                 for (int i = 0; i < prgCmds.Length; ++i)
@@ -127,6 +128,7 @@ namespace VSBlockJumper
 
         public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             if (pguidCmdGroup == IDs.PackageCommandSetGUID)
             {
                 if (nCmdID == IDs.JumpUpCommandID)
@@ -168,7 +170,7 @@ namespace VSBlockJumper
                     start = View.Selection.End;
                 }
             }
-            
+
             Jump(direction);
 
             // use the new caret position as our selection end point
@@ -178,21 +180,21 @@ namespace VSBlockJumper
 
         private void Jump(JumpDirection direction)
         {
-            // as with the standard caret moving operations (click, arrow keys, etc.) 
+            // as with the standard caret moving operations (click, arrow keys, etc.)
             // we clear our current selection when we jump
             View.Selection.Clear();
 
             // rules:
-            // if the line we begin on contains text, or the following line contains text, 
+            // if the line we begin on contains text, or the following line contains text,
             // navigate to the next blank line
-            // if the line we begin on is blank, and the next line is also blank, 
+            // if the line we begin on is blank, and the next line is also blank,
             // navigate to the line preceding the next line that contains text
             // if we find no suitable lines, we navigate to the last line
             CaretPosition startingPos = View.Caret.Position;
             ITextBuffer buffer = View.TextBuffer;
             ITextSnapshot currentSnapshot = buffer.CurrentSnapshot;
             SnapshotPoint start = startingPos.BufferPosition;
-            
+
             ITextSnapshotLine previousLine = start.GetContainingLine();
             ITextSnapshotLine targetLine = null;
             bool previousLineIsBlank = string.IsNullOrWhiteSpace(previousLine.GetTextIncludingLineBreak());
